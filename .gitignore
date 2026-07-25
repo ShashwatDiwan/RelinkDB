@@ -1,0 +1,14 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+*.log
+debug-*.log
+dist/
+out/
+release/
+coverage/
+*.sqlite
+*.sqlite3
+*.db
+data/*.sql

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings — Render DB Refresh</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Settings</h1>
+        <p class="subtitle">Connection config for your Render account</p>
+      </div>
+      <a class="btn btn-ghost" href="index.html">← Dashboard</a>
+    </header>
+
+    <main class="layout narrow">
+      <form class="settings-form" id="settingsForm">
+        <label>
+          <span>Render API Key</span>
+          <input type="password" id="apiKey" name="apiKey" autocomplete="off" required />
+        </label>
+
+        <label>
+          <span>Database Name</span>
+          <input type="text" id="dbName" name="dbName" placeholder="myapp-db" required />
+        </label>
+
+        <label>
+          <span>Web Service ID</span>
+          <input
+            type="text"
+            id="webServiceId"
+            name="webServiceId"
+            placeholder="srv-xxxxxxxxxxxx"
+            required
+          />
+        </label>
+
+        <label>
+          <span>Env Var Key</span>
+          <input type="text" id="envVarKey" name="envVarKey" value="DATABASE_URL" />
+        </label>
+
+        <label>
+          <span>Backup File Path</span>
+          <div class="file-row">
+            <input type="text" id="backupFile" name="backupFile" required />
+            <button type="button" class="btn btn-ghost" id="pickFile">Browse…</button>
+          </div>
+        </label>
+
+        <label>
+          <span>Auto-backup interval (days)</span>
+          <input
+            type="number"
+            id="autoBackupIntervalDays"
+            name="autoBackupIntervalDays"
+            min="1"
+            max="30"
+            value="3"
+          />
+        </label>
+
+        <div class="notice" id="storageNotice">
+          Your API key is stored locally in plaintext at
+          <code id="storePath">…</code>. Don't share this file or commit it to version control.
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="btnTest">Test Connection</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+
+        <p class="inline-result" id="formResult" role="status"></p>
+      </form>
+    </main>
+
+    <script src="settings.js"></script>
+  </body>
+</html>
