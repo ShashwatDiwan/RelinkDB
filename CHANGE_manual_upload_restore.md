@@ -1,6 +1,6 @@
 # Change Request: Manual SQL Upload as a Restore Source
 
-Add-on to the existing Render DB Refresh app. Assumes the app already has:
+Add-on to the existing RelinkDB app. Assumes the app already has:
 `db-backup`, `db-restore-and-relink` edge functions, a `render-db-backups`
 Storage bucket, and a `backup_runs` table — reuse/extend these, don't
 recreate them.

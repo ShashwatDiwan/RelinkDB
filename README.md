@@ -1,4 +1,4 @@
-# render-db-sync
+# RelinkDB
 
 Cuts the monthly "Render free Postgres expired" chore down to about
 two minutes: one manual click-through in the dashboard, then two commands.

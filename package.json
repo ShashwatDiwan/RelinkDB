@@ -1,5 +1,5 @@
 {
-  "name": "render-db-refresh",
+  "name": "relinkdb",
   "version": "1.0.0",
   "private": true,
   "description": "Desktop app to pull, restore, and relink Render free Postgres databases",

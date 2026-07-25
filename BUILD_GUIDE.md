@@ -1,4 +1,4 @@
-# Build Brief: "Render DB Refresh" Desktop App
+# Build Brief: "RelinkDB" Desktop App
 
 Hand this document to a coding agent (Claude Code, Cursor, etc.) as-is. It's
 self-contained — the agent doesn't need any other context to build this.
@@ -29,7 +29,7 @@ commands, with a bit more automation layered on top.
 
 ## 2. Goal
 
-A local Electron desktop app ("Render DB Refresh") with:
+A local Electron desktop app ("RelinkDB") with:
 
 - A settings screen to store connection config (no more editing `.env` by
   hand).
@@ -65,7 +65,7 @@ issues calling the Render API directly and can't shell out to `psql`/
 `pg_dump` at all.
 
 ```
-render-db-refresh/
+relinkdb/
 ├── package.json
 ├── main.js                 # Electron main process — app lifecycle, IPC handlers
 ├── preload.js               # contextBridge — exposes a safe IPC API to the renderer
@@ -329,7 +329,7 @@ main().catch((err) => fail(err.stack || err.message));
 ```javascript
 #!/usr/bin/env node
 /**
- * render-db-sync — run AFTER you manually create the new Free Postgres
+ * RelinkDB — run AFTER you manually create the new Free Postgres
  * instance in the Render dashboard (same name every time). See README.md.
  */
 

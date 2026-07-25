@@ -62,7 +62,7 @@ function createWindow() {
     height: 780,
     minWidth: 720,
     minHeight: 560,
-    title: "Render DB Refresh",
+    title: "RelinkDB",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
