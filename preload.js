@@ -24,4 +24,9 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.on("log:line", listener);
     return () => ipcRenderer.removeListener("log:line", listener);
   },
+  onRenewalReady: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("renewal:ready", listener);
+    return () => ipcRenderer.removeListener("renewal:ready", listener);
+  },
 });

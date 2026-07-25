@@ -360,6 +360,11 @@ app.whenReady().then(() => {
         new Notification({ title, body }).show();
       }
     },
+    onRenewalReady: (payload) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("renewal:ready", payload);
+      }
+    },
   });
 
   app.on("activate", () => {

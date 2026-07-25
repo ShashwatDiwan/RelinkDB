@@ -56,6 +56,20 @@
         </p>
       </section>
 
+      <section class="renewal-banner hidden" id="renewalBanner" aria-live="polite">
+        <div>
+          <strong>Database export ready</strong>
+          <p id="renewalBannerText">
+            The current Render free Postgres is near expiry, so your backup has been exported.
+            Create the new database now, then come back to restore and relink.
+          </p>
+        </div>
+        <div class="renewal-actions">
+          <button type="button" class="btn btn-primary" id="renewalCreateBtn">Create New DB</button>
+          <button type="button" class="btn btn-ghost" id="renewalDismissBtn">Dismiss</button>
+        </div>
+      </section>
+
       <section class="steps">
         <article class="step" id="step1" data-step="1">
           <div class="step-header">

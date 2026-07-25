@@ -26,6 +26,10 @@ const els = {
   step2Status: document.getElementById("step2Status"),
   step3Status: document.getElementById("step3Status"),
   waitingBanner: document.getElementById("waitingBanner"),
+  renewalBanner: document.getElementById("renewalBanner"),
+  renewalBannerText: document.getElementById("renewalBannerText"),
+  renewalCreateBtn: document.getElementById("renewalCreateBtn"),
+  renewalDismissBtn: document.getElementById("renewalDismissBtn"),
   syncSuccess: document.getElementById("syncSuccess"),
   serviceLink: document.getElementById("serviceLink"),
   logOutput: document.getElementById("logOutput"),
@@ -108,6 +112,16 @@ function updateUploadUi() {
   els.btnPickSql.disabled = state.busy;
 }
 
+function showRenewalBanner(payload = {}) {
+  state.stepCompleted[1] = true;
+  els.step1Status.textContent = "Auto-export complete";
+  els.renewalBannerText.textContent = payload.daysRemaining
+    ? `The current Render free Postgres is near expiry, and your backup has been exported. Create the new database now. About ${payload.daysRemaining} day(s) were left when the export ran.`
+    : "The current Render free Postgres is near expiry, and your backup has been exported. Create the new database now.";
+  els.renewalBanner.classList.remove("hidden");
+  updateStepUi();
+}
+
 async function refreshStatus() {
   const [config, tools, history] = await Promise.all([
     window.api.getConfig(),
@@ -145,11 +159,11 @@ function renderHistory(history) {
     const kind = entry.kind || entry.action;
     let detailBits = "";
     if (entry.details) {
-      detailBits = ` · ${entry.details.succeeded ?? 0} ok / ${entry.details.skippedHarmless ?? 0} skipped / ${
+      detailBits = ` Ã‚Â· ${entry.details.succeeded ?? 0} ok / ${entry.details.skippedHarmless ?? 0} skipped / ${
         entry.details.failed?.length ?? 0
       } failed`;
     }
-    li.innerHTML = `${badge} <strong>${escapeHtml(kind)}</strong> — ${escapeHtml(
+    li.innerHTML = `${badge} <strong>${escapeHtml(kind)}</strong> Ã¢â‚¬â€ ${escapeHtml(
       entry.summary || ""
     )}${escapeHtml(detailBits)} <span class="muted">(${formatTime(entry.timestamp)})</span>`;
     els.historyList.appendChild(li);
@@ -196,18 +210,18 @@ function showSanitizeReport({ removedCount, removed }) {
 function showRunResults(details, { dashboardUrl, dryRun } = {}) {
   els.runResults.classList.remove("hidden");
   const failedCount = details?.failed?.length ?? 0;
-  let summary = `${details?.succeeded ?? "—"} succeeded · ${
+  let summary = `${details?.succeeded ?? "Ã¢â‚¬â€"} succeeded Ã‚Â· ${
     details?.skippedHarmless ?? 0
-  } skipped as harmless · ${failedCount} failed`;
+  } skipped as harmless Ã‚Â· ${failedCount} failed`;
 
   if (details?.expectedRows != null) {
-    summary += ` · source ~${details.expectedRows} row(s)`;
+    summary += ` Ã‚Â· source ~${details.expectedRows} row(s)`;
   }
   if (details?.usedPsql) {
-    summary += " · restored via psql";
+    summary += " Ã‚Â· restored via psql";
   }
   if (details?.verification) {
-    summary += ` · DB now has ${details.verification.total} row(s)`;
+    summary += ` Ã‚Â· DB now has ${details.verification.total} row(s)`;
   }
   els.runResultsSummary.textContent = summary;
 
@@ -239,7 +253,7 @@ async function ingestUploadedFile({ filePath, originalName }) {
   els.uploadFileLabel.textContent = originalName || filePath;
   els.runResults.classList.add("hidden");
   els.uploadSyncSuccess.classList.add("hidden");
-  els.uploadStatus.textContent = "Sanitizing…";
+  els.uploadStatus.textContent = "SanitizingÃ¢â‚¬Â¦";
 
   const sanitizeResult = await window.api.sanitizeSql({ filePath });
   showSanitizeReport(sanitizeResult);
@@ -249,12 +263,12 @@ async function ingestUploadedFile({ filePath, originalName }) {
 
 els.btnBackup.addEventListener("click", async () => {
   setBusy(true);
-  els.step1Status.textContent = "Running…";
+  els.step1Status.textContent = "RunningÃ¢â‚¬Â¦";
   els.step1.classList.add("active");
   try {
     const result = await window.api.runBackup();
     state.stepCompleted[1] = true;
-    els.step1Status.textContent = `Done · ${formatTime(result.lastBackupAt)}`;
+    els.step1Status.textContent = `Done Ã‚Â· ${formatTime(result.lastBackupAt)}`;
     await refreshStatus();
   } catch (err) {
     els.step1Status.textContent = "Failed";
@@ -268,13 +282,13 @@ els.btnBackup.addEventListener("click", async () => {
 els.btnRecreate.addEventListener("click", async () => {
   setBusy(true);
   els.step2.classList.add("active");
-  els.step2Status.textContent = "Opening dashboard…";
+  els.step2Status.textContent = "Opening dashboardÃ¢â‚¬Â¦";
   try {
     await window.api.openDashboard();
     state.polling = true;
     setBusy(false);
     updateStepUi();
-    els.step2Status.textContent = "Waiting for new database…";
+    els.step2Status.textContent = "Waiting for new databaseÃ¢â‚¬Â¦";
 
     const poll = await window.api.pollNewDb();
     state.polling = false;
@@ -311,7 +325,7 @@ els.btnContinueAnyway.addEventListener("click", async () => {
 els.btnSync.addEventListener("click", async () => {
   setBusy(true);
   els.step3.classList.add("active");
-  els.step3Status.textContent = "Running…";
+  els.step3Status.textContent = "RunningÃ¢â‚¬Â¦";
   els.syncSuccess.classList.add("hidden");
   try {
     const result = await window.api.runSync();
@@ -411,7 +425,7 @@ els.dropZone.addEventListener("drop", async (e) => {
 els.btnDryRun.addEventListener("click", async () => {
   if (!state.uploadFilePath) return;
   setBusy(true);
-  els.uploadStatus.textContent = "Dry run…";
+  els.uploadStatus.textContent = "Dry runÃ¢â‚¬Â¦";
   try {
     const result = await window.api.restoreFromFile({
       filePath: state.uploadFilePath,
@@ -421,8 +435,8 @@ els.btnDryRun.addEventListener("click", async () => {
     state.dryRunHadFailures = !result.ok;
     showRunResults(result.details, { dryRun: true });
     els.uploadStatus.textContent = result.ok
-      ? "Dry run OK � restore enabled"
-      : "Dry run finished with failures � fix errors before restoring";
+      ? "Dry run OK â€” restore enabled"
+      : "Dry run finished with failures â€” fix errors before restoring";
     await refreshStatus();
   } catch (err) {
     els.uploadStatus.textContent = "Dry run failed";
@@ -435,7 +449,7 @@ els.btnDryRun.addEventListener("click", async () => {
 els.btnRestoreFile.addEventListener("click", async () => {
   if (!state.uploadFilePath || state.dryRunDoneFor !== state.uploadFilePath) return;
   setBusy(true);
-  els.uploadStatus.textContent = "Restoring…";
+  els.uploadStatus.textContent = "RestoringÃ¢â‚¬Â¦";
   try {
     const result = await window.api.restoreFromFile({
       filePath: state.uploadFilePath,
@@ -446,8 +460,8 @@ els.btnRestoreFile.addEventListener("click", async () => {
       dashboardUrl: result.dashboardUrl,
     });
     els.uploadStatus.textContent = result.ok
-      ? "Dry run OK � restore enabled"
-      : "Dry run finished with failures � fix errors before restoring";
+      ? "Dry run OK â€” restore enabled"
+      : "Dry run finished with failures â€” fix errors before restoring";
     await refreshStatus();
   } catch (err) {
     els.uploadStatus.textContent = "Restore failed";
@@ -479,6 +493,15 @@ els.uploadServiceLink?.addEventListener("click", (e) => {
 });
 
 window.api.onLogLine(appendLog);
+window.api.onRenewalReady(showRenewalBanner);
+
+els.renewalCreateBtn.addEventListener("click", () => {
+  els.btnRecreate.click();
+});
+
+els.renewalDismissBtn.addEventListener("click", () => {
+  els.renewalBanner.classList.add("hidden");
+});
 
 (async function init() {
   updateStepUi();
