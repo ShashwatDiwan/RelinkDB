@@ -114,6 +114,45 @@ Bottom line: the fallbacks make the whole loop work with zero extra
 installs, but installing `postgresql-client` once removes every caveat
 above and is worth the five minutes.
 
+## Cloud worker
+
+The desktop app now stays focused on the operator flow. The expiry job
+can run in a small standalone worker:
+
+```bash
+npm run cloud:expiry
+```
+
+Worker environment variables:
+
+- `RENDER_API_KEY`
+- `RENDER_DB_NAME`
+- `BACKUP_FILE`
+- `RELINKDB_NOTIFY_WEBHOOK` optional, receives the JSON renewal payload
+- `RELINKDB_CHECK_MS` optional, defaults to 24 hours
+
+The worker checks the database age daily, auto-exports once per DB
+cycle when the warning window opens, and posts a notification payload if
+you configure a webhook.
+
+## Portable Windows Launch
+
+If you want an executable launch path instead of `npm start`, stage a
+portable Windows build locally:
+
+```bash
+npm run package:portable
+```
+
+That copies the app into `dist/portable/` alongside the bundled Electron
+runtime. Launch the staged `.exe` directly with:
+
+```bash
+npm run launch:portable
+```
+
+`npm start` remains the dev path.
+
 ## A note on the connection-info response shape
 
 Render doesn't publish a fully static schema for
