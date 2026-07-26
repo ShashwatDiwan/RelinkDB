@@ -18,7 +18,7 @@
 
 **Render's free Postgres databases expire every 30 days. RelinkDB turns that monthly scramble into a two-minute, guided routine.**
 
-[Overview](#overview) · [Screenshots](#screenshots) [How It Works](#how-it-works) · [Features](#features) · [Setup](#setup) · [Monthly Workflow](#monthly-workflow) · [Cloud Worker](#cloud-worker) · [Architecture](#architecture)
+[Overview](#overview) · [Screenshots](#screenshots) · [How It Works](#how-it-works) · [Features](#features) · [Setup](#setup) · [Monthly Workflow](#monthly-workflow) · [Cloud Worker](#cloud-worker) · [Architecture](#architecture)
 
 </div>
 
