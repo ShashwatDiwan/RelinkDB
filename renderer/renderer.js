@@ -6,11 +6,14 @@ const state = {
   uploadOriginalName: null,
   dryRunDoneFor: null,
   dryRunHadFailures: false,
+  renewalBannerDismissed: false,
 };
 
 const els = {
   statusDbName: document.getElementById("statusDbName"),
+  statusExpiry: document.getElementById("statusExpiry"),
   statusLastBackup: document.getElementById("statusLastBackup"),
+  statusLaunch: document.getElementById("statusLaunch"),
   statusPgDump: document.getElementById("statusPgDump"),
   statusPsql: document.getElementById("statusPsql"),
   toolsHint: document.getElementById("toolsHint"),
@@ -68,6 +71,45 @@ function formatTime(iso) {
   }
 }
 
+function formatExpiry(expiry) {
+  if (!expiry?.ok) {
+    if (expiry?.reason === "missing_config") return "Settings needed";
+    if (expiry?.reason === "not_found") return "DB not found";
+    return "Unavailable";
+  }
+  if (!expiry.known) return "Unknown";
+  if (expiry.expired) return "Expired";
+
+  const days = Number(expiry.daysRemaining);
+  const hours = Number(expiry.hoursRemaining);
+  if (days >= 1) {
+    const wholeDays = Math.floor(days);
+    const wholeHours = Math.max(0, Math.round((days - wholeDays) * 24));
+    if (wholeHours > 0) {
+      return `${wholeDays}d ${wholeHours}h left`;
+    }
+    const roundedDays = Math.ceil(days);
+    return `${roundedDays} day${roundedDays === 1 ? "" : "s"} left`;
+  }
+  if (hours >= 1) {
+    const roundedHours = Math.ceil(hours);
+    return `${roundedHours} hour${roundedHours === 1 ? "" : "s"} left`;
+  }
+  return "Less than 1 hour left";
+}
+
+function setExpiryTone(expiry) {
+  els.statusExpiry.classList.remove("status-ok", "status-warn", "status-danger");
+  if (!expiry?.ok || !expiry.known) return;
+  if (expiry.expired) {
+    els.statusExpiry.classList.add("status-danger");
+  } else if (expiry.nearExpiry) {
+    els.statusExpiry.classList.add("status-warn");
+  } else {
+    els.statusExpiry.classList.add("status-ok");
+  }
+}
+
 function appendLog({ level, text, timestamp }) {
   const line = document.createElement("div");
   line.className = `log-line ${level || "info"}`;
@@ -113,26 +155,51 @@ function updateUploadUi() {
 }
 
 function showRenewalBanner(payload = {}) {
-  state.stepCompleted[1] = true;
-  els.step1Status.textContent = "Auto-export complete";
-  els.renewalBannerText.textContent = payload.daysRemaining
-    ? `The current Render free Postgres is near expiry, and your backup has been exported. Create the new database now. About ${payload.daysRemaining} day(s) were left when the export ran.`
-    : "The current Render free Postgres is near expiry, and your backup has been exported. Create the new database now.";
+  if (state.renewalBannerDismissed && !payload.force) return;
+  if (payload.autoExported) {
+    state.stepCompleted[1] = true;
+    els.step1Status.textContent = "Export complete";
+  }
+  const daysText =
+    payload.daysRemaining != null
+      ? `${payload.daysRemaining} day${payload.daysRemaining === 1 ? "" : "s"}`
+      : null;
+  els.renewalBannerText.textContent = daysText
+    ? `The database is close to expiry (${daysText} left). Pull latest data or confirm the cloud export before creating the replacement DB.`
+    : "The database is close to expiry. Pull latest data or confirm the cloud export before creating the replacement DB.";
   els.renewalBanner.classList.remove("hidden");
   updateStepUi();
 }
 
 async function refreshStatus() {
-  const [config, tools, history] = await Promise.all([
+  const [config, tools, history, expiry] = await Promise.all([
     window.api.getConfig(),
     window.api.checkTools(),
     window.api.getHistory(),
+    window.api.getExpiryStatus().catch((err) => ({
+      ok: false,
+      reason: err.message || "expiry_check_failed",
+    })),
   ]);
 
   els.statusDbName.textContent = config.dbName || "(not set)";
+  els.statusExpiry.textContent = formatExpiry(expiry);
   els.statusLastBackup.textContent = formatTime(config.lastBackupAt);
+  els.statusLaunch.textContent =
+    config.launchAtLogin !== false ? "Visible on login" : "Manual launch";
   els.statusPgDump.textContent = tools.pgDump ? "Yes" : "No";
   els.statusPsql.textContent = tools.psql ? "Yes" : "No";
+  setExpiryTone(expiry);
+
+  if (expiry?.ok && expiry.known && expiry.nearExpiry) {
+    showRenewalBanner({
+      dbName: config.dbName,
+      daysRemaining: Math.max(0, Math.ceil(expiry.daysRemaining)),
+      expiresAt: expiry.expiresAt,
+    });
+  } else {
+    state.renewalBannerDismissed = false;
+  }
 
   const missingTools = !tools.pgDump || !tools.psql;
   els.toolsHint.classList.toggle("hidden", !missingTools);
@@ -159,11 +226,11 @@ function renderHistory(history) {
     const kind = entry.kind || entry.action;
     let detailBits = "";
     if (entry.details) {
-      detailBits = ` Ã‚Â· ${entry.details.succeeded ?? 0} ok / ${entry.details.skippedHarmless ?? 0} skipped / ${
-        entry.details.failed?.length ?? 0
-      } failed`;
+      detailBits = ` - ${entry.details.succeeded ?? 0} ok / ${
+        entry.details.skippedHarmless ?? 0
+      } skipped / ${entry.details.failed?.length ?? 0} failed`;
     }
-    li.innerHTML = `${badge} <strong>${escapeHtml(kind)}</strong> Ã¢â‚¬â€ ${escapeHtml(
+    li.innerHTML = `${badge} <strong>${escapeHtml(kind)}</strong> - ${escapeHtml(
       entry.summary || ""
     )}${escapeHtml(detailBits)} <span class="muted">(${formatTime(entry.timestamp)})</span>`;
     els.historyList.appendChild(li);
@@ -210,29 +277,29 @@ function showSanitizeReport({ removedCount, removed }) {
 function showRunResults(details, { dashboardUrl, dryRun } = {}) {
   els.runResults.classList.remove("hidden");
   const failedCount = details?.failed?.length ?? 0;
-  let summary = `${details?.succeeded ?? "Ã¢â‚¬â€"} succeeded Ã‚Â· ${
+  let summary = `${details?.succeeded ?? "-"} succeeded - ${
     details?.skippedHarmless ?? 0
-  } skipped as harmless Ã‚Â· ${failedCount} failed`;
+  } skipped as harmless - ${failedCount} failed`;
 
   if (details?.expectedRows != null) {
-    summary += ` Ã‚Â· source ~${details.expectedRows} row(s)`;
+    summary += ` - source ~${details.expectedRows} row(s)`;
   }
   if (details?.usedPsql) {
-    summary += " Ã‚Â· restored via psql";
+    summary += " - restored via psql";
   }
   if (details?.verification) {
-    summary += ` Ã‚Â· DB now has ${details.verification.total} row(s)`;
+    summary += ` - DB now has ${details.verification.total} row(s)`;
   }
   els.runResultsSummary.textContent = summary;
 
   els.runFailedList.innerHTML = "";
   for (const f of details?.failed || []) {
     const detailsEl = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = f.error?.slice(0, 120) || "Error";
+    const summaryEl = document.createElement("summary");
+    summaryEl.textContent = f.error?.slice(0, 120) || "Error";
     const pre = document.createElement("pre");
     pre.textContent = `${f.statement || ""}\n\n${f.error || ""}`;
-    detailsEl.appendChild(summary);
+    detailsEl.appendChild(summaryEl);
     detailsEl.appendChild(pre);
     els.runFailedList.appendChild(detailsEl);
   }
@@ -253,7 +320,7 @@ async function ingestUploadedFile({ filePath, originalName }) {
   els.uploadFileLabel.textContent = originalName || filePath;
   els.runResults.classList.add("hidden");
   els.uploadSyncSuccess.classList.add("hidden");
-  els.uploadStatus.textContent = "SanitizingÃ¢â‚¬Â¦";
+  els.uploadStatus.textContent = "Sanitizing...";
 
   const sanitizeResult = await window.api.sanitizeSql({ filePath });
   showSanitizeReport(sanitizeResult);
@@ -263,12 +330,12 @@ async function ingestUploadedFile({ filePath, originalName }) {
 
 els.btnBackup.addEventListener("click", async () => {
   setBusy(true);
-  els.step1Status.textContent = "RunningÃ¢â‚¬Â¦";
+  els.step1Status.textContent = "Running...";
   els.step1.classList.add("active");
   try {
     const result = await window.api.runBackup();
     state.stepCompleted[1] = true;
-    els.step1Status.textContent = `Done Ã‚Â· ${formatTime(result.lastBackupAt)}`;
+    els.step1Status.textContent = `Done - ${formatTime(result.lastBackupAt)}`;
     await refreshStatus();
   } catch (err) {
     els.step1Status.textContent = "Failed";
@@ -282,22 +349,20 @@ els.btnBackup.addEventListener("click", async () => {
 els.btnRecreate.addEventListener("click", async () => {
   setBusy(true);
   els.step2.classList.add("active");
-  els.step2Status.textContent = "Opening dashboardÃ¢â‚¬Â¦";
+  els.step2Status.textContent = "Opening dashboard...";
   try {
     await window.api.openDashboard();
     state.polling = true;
     setBusy(false);
     updateStepUi();
-    els.step2Status.textContent = "Waiting for new databaseÃ¢â‚¬Â¦";
+    els.step2Status.textContent = "Waiting for new database...";
 
     const poll = await window.api.pollNewDb();
     state.polling = false;
     if (poll.ok || poll.cancelled || poll.timedOut) {
       state.stepCompleted[2] = true;
       els.step2Status.textContent =
-        poll.ok && !poll.timedOut && !poll.cancelled
-          ? "Database detected"
-          : "Ready to continue";
+        poll.ok && !poll.timedOut && !poll.cancelled ? "Database detected" : "Ready to continue";
     }
   } catch (err) {
     state.polling = false;
@@ -325,7 +390,7 @@ els.btnContinueAnyway.addEventListener("click", async () => {
 els.btnSync.addEventListener("click", async () => {
   setBusy(true);
   els.step3.classList.add("active");
-  els.step3Status.textContent = "RunningÃ¢â‚¬Â¦";
+  els.step3Status.textContent = "Running...";
   els.syncSuccess.classList.add("hidden");
   try {
     const result = await window.api.runSync();
@@ -425,7 +490,7 @@ els.dropZone.addEventListener("drop", async (e) => {
 els.btnDryRun.addEventListener("click", async () => {
   if (!state.uploadFilePath) return;
   setBusy(true);
-  els.uploadStatus.textContent = "Dry runÃ¢â‚¬Â¦";
+  els.uploadStatus.textContent = "Dry run...";
   try {
     const result = await window.api.restoreFromFile({
       filePath: state.uploadFilePath,
@@ -435,8 +500,8 @@ els.btnDryRun.addEventListener("click", async () => {
     state.dryRunHadFailures = !result.ok;
     showRunResults(result.details, { dryRun: true });
     els.uploadStatus.textContent = result.ok
-      ? "Dry run OK â€” restore enabled"
-      : "Dry run finished with failures â€” fix errors before restoring";
+      ? "Dry run OK - restore enabled"
+      : "Dry run finished with failures - fix errors before restoring";
     await refreshStatus();
   } catch (err) {
     els.uploadStatus.textContent = "Dry run failed";
@@ -449,7 +514,7 @@ els.btnDryRun.addEventListener("click", async () => {
 els.btnRestoreFile.addEventListener("click", async () => {
   if (!state.uploadFilePath || state.dryRunDoneFor !== state.uploadFilePath) return;
   setBusy(true);
-  els.uploadStatus.textContent = "RestoringÃ¢â‚¬Â¦";
+  els.uploadStatus.textContent = "Restoring...";
   try {
     const result = await window.api.restoreFromFile({
       filePath: state.uploadFilePath,
@@ -459,9 +524,7 @@ els.btnRestoreFile.addEventListener("click", async () => {
       dryRun: false,
       dashboardUrl: result.dashboardUrl,
     });
-    els.uploadStatus.textContent = result.ok
-      ? "Dry run OK â€” restore enabled"
-      : "Dry run finished with failures â€” fix errors before restoring";
+    els.uploadStatus.textContent = result.ok ? "Restore complete" : "Restore finished with failures";
     await refreshStatus();
   } catch (err) {
     els.uploadStatus.textContent = "Restore failed";
@@ -500,6 +563,7 @@ els.renewalCreateBtn.addEventListener("click", () => {
 });
 
 els.renewalDismissBtn.addEventListener("click", () => {
+  state.renewalBannerDismissed = true;
   els.renewalBanner.classList.add("hidden");
 });
 
@@ -507,4 +571,5 @@ els.renewalDismissBtn.addEventListener("click", () => {
   updateStepUi();
   updateUploadUi();
   await refreshStatus();
+  setInterval(refreshStatus, 15 * 60 * 1000);
 })();

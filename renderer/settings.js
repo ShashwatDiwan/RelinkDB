@@ -17,9 +17,11 @@ async function load() {
   document.getElementById("dbName").value = config.dbName || "";
   document.getElementById("webServiceId").value = config.webServiceId || "";
   document.getElementById("envVarKey").value = config.envVarKey || "DATABASE_URL";
+  document.getElementById("notificationEmail").value = config.notificationEmail || "";
   document.getElementById("backupFile").value = config.backupFile || "";
   document.getElementById("autoBackupIntervalDays").value =
-    config.autoBackupIntervalDays ?? 3;
+    config.autoBackupIntervalDays ?? 1;
+  document.getElementById("launchAtLogin").checked = config.launchAtLogin !== false;
   storePathEl.textContent = storePath;
 }
 
@@ -30,8 +32,10 @@ form.addEventListener("submit", async (e) => {
     dbName: document.getElementById("dbName").value.trim(),
     webServiceId: document.getElementById("webServiceId").value.trim(),
     envVarKey: document.getElementById("envVarKey").value.trim() || "DATABASE_URL",
+    notificationEmail: document.getElementById("notificationEmail").value.trim(),
     backupFile: document.getElementById("backupFile").value.trim(),
-    autoBackupIntervalDays: Number(document.getElementById("autoBackupIntervalDays").value) || 3,
+    autoBackupIntervalDays: Number(document.getElementById("autoBackupIntervalDays").value) || 1,
+    launchAtLogin: document.getElementById("launchAtLogin").checked,
   };
 
   try {
@@ -49,8 +53,10 @@ document.getElementById("btnTest").addEventListener("click", async () => {
     dbName: document.getElementById("dbName").value.trim(),
     webServiceId: document.getElementById("webServiceId").value.trim(),
     envVarKey: document.getElementById("envVarKey").value.trim() || "DATABASE_URL",
+    notificationEmail: document.getElementById("notificationEmail").value.trim(),
     backupFile: document.getElementById("backupFile").value.trim(),
-    autoBackupIntervalDays: Number(document.getElementById("autoBackupIntervalDays").value) || 3,
+    autoBackupIntervalDays: Number(document.getElementById("autoBackupIntervalDays").value) || 1,
+    launchAtLogin: document.getElementById("launchAtLogin").checked,
   };
 
   try {

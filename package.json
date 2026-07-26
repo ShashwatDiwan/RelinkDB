@@ -6,8 +6,13 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "start:exe": ".\\node_modules\\electron\\dist\\electron.exe .",
     "backup": "node backup.js",
-    "sync": "node sync.js"
+    "sync": "node sync.js",
+    "cloud:expiry": "node cloud/expiry-worker.js",
+    "package:portable": "node scripts/package-portable.js",
+    "desktop:shortcut": "node scripts/create-desktop-shortcut.js",
+    "launch:portable": "dist\\portable\\RelinkDB.exe"
   },
   "engines": {
     "node": ">=18"

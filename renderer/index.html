@@ -12,33 +12,49 @@
   </head>
   <body>
     <header class="topbar">
-      <div>
-        <h1>RelinkDB</h1>
-        <p class="subtitle">Pull → Recreate → Restore &amp; Relink</p>
+      <div class="brand-lockup">
+        <img class="brand-mark" src="../assets/logo.png" alt="" />
+        <div class="brand-copy">
+          <p class="brand-kicker">RelinkDB</p>
+          <h1>Database relink console</h1>
+          <p class="subtitle">Backup, recreate, restore, and relink from one screen.</p>
+        </div>
       </div>
-      <a class="btn btn-ghost" href="settings.html">Settings</a>
+      <nav class="topbar-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="help.html">Help</a>
+        <a class="btn btn-ghost" href="settings.html">Settings</a>
+      </nav>
     </header>
 
-    <main class="layout">
+    <main class="app-layout">
       <section class="status-card" id="statusCard">
-        <div class="status-grid">
+        <div class="status-card-head">
           <div>
-            <span class="label">Database</span>
-            <strong id="statusDbName">—</strong>
+            <span class="label">Live status</span>
+            <h2 id="statusDbName">-</h2>
           </div>
+          <span class="status-pill" id="statusExpiry">Checking...</span>
+        </div>
+
+        <div class="status-grid">
           <div>
             <span class="label">Last backup</span>
             <strong id="statusLastBackup">Never</strong>
           </div>
           <div>
+            <span class="label">Startup</span>
+            <strong id="statusLaunch">Visible on login</strong>
+          </div>
+          <div>
             <span class="label">pg_dump</span>
-            <strong id="statusPgDump">—</strong>
+            <strong id="statusPgDump">-</strong>
           </div>
           <div>
             <span class="label">psql</span>
-            <strong id="statusPsql">—</strong>
+            <strong id="statusPsql">-</strong>
           </div>
         </div>
+
         <p class="tools-hint hidden" id="toolsHint">
           Postgres client tools not detected. The app will use a JS fallback, or
           <a
@@ -56,145 +72,154 @@
         </p>
       </section>
 
-      <section class="renewal-banner hidden" id="renewalBanner" aria-live="polite">
-        <div>
-          <strong>Database export ready</strong>
-          <p id="renewalBannerText">
-            The current Render free Postgres is near expiry, so your backup has been exported.
-            Create the new database now, then come back to restore and relink.
-          </p>
+      <section class="workflow-panel" aria-label="Database workflow">
+        <div class="workflow-head">
+          <div>
+            <span class="label">Main workflow</span>
+            <h2>Run the three steps left to right.</h2>
+          </div>
+          <a class="btn btn-ghost" href="help.html">Setup guide</a>
         </div>
-        <div class="renewal-actions">
-          <button type="button" class="btn btn-primary" id="renewalCreateBtn">Create New DB</button>
-          <button type="button" class="btn btn-ghost" id="renewalDismissBtn">Dismiss</button>
-        </div>
+
+        <section class="renewal-banner hidden" id="renewalBanner" aria-live="polite">
+          <div>
+            <strong>Backup ready</strong>
+            <p id="renewalBannerText">
+              Create the new database in Render, then come back here to restore and relink.
+            </p>
+          </div>
+          <div class="renewal-actions">
+            <button type="button" class="btn btn-primary" id="renewalCreateBtn">
+              Create New DB
+            </button>
+            <button type="button" class="btn btn-ghost" id="renewalDismissBtn">Dismiss</button>
+          </div>
+        </section>
+
+        <section class="steps">
+          <article class="step" id="step1" data-step="1">
+            <div class="step-header">
+              <span class="step-num">1</span>
+              <div>
+                <h2>Pull Latest Data</h2>
+                <p>Export schema and data from the current live DB.</p>
+              </div>
+            </div>
+            <div class="step-actions">
+              <button type="button" class="btn btn-primary" id="btnBackup">Pull Latest Data</button>
+              <span class="step-status" id="step1Status"></span>
+            </div>
+          </article>
+
+          <article class="step locked" id="step2" data-step="2">
+            <div class="step-header">
+              <span class="step-num">2</span>
+              <div>
+                <h2>Recreate Database</h2>
+                <p>Open Render only when you are ready to create the replacement DB.</p>
+              </div>
+            </div>
+            <div class="step-actions">
+              <button type="button" class="btn btn-primary" id="btnRecreate" disabled>
+                Recreate Database
+              </button>
+              <button type="button" class="btn btn-ghost hidden" id="btnContinueAnyway">
+                I've created it
+              </button>
+              <span class="step-status" id="step2Status"></span>
+            </div>
+            <div class="waiting hidden" id="waitingBanner">
+              <span class="spinner"></span>
+              Waiting for new database...
+            </div>
+          </article>
+
+          <article class="step locked" id="step3" data-step="3">
+            <div class="step-header">
+              <span class="step-num">3</span>
+              <div>
+                <h2>Restore & Relink</h2>
+                <p>Restore the dump and update your backend env var.</p>
+              </div>
+            </div>
+            <div class="step-actions">
+              <button type="button" class="btn btn-primary" id="btnSync" disabled>
+                Restore & Relink
+              </button>
+              <span class="step-status" id="step3Status"></span>
+            </div>
+            <p class="success-link hidden" id="syncSuccess">
+              Done.
+              <a id="serviceLink" href="#" target="_blank" rel="noreferrer">Open backend on Render</a>
+            </p>
+          </article>
+        </section>
       </section>
 
-      <section class="steps">
-        <article class="step" id="step1" data-step="1">
-          <div class="step-header">
-            <span class="step-num">1</span>
-            <div>
-              <h2>Pull Latest Data</h2>
-              <p>Dump schema + data from the live database into your backup file.</p>
-            </div>
-          </div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-primary" id="btnBackup">Pull Latest Data</button>
-            <span class="step-status" id="step1Status"></span>
-          </div>
-        </article>
+      <section class="bottom-grid">
+        <section class="panel upload-panel">
+          <button type="button" class="panel-toggle" id="uploadToggle" aria-expanded="false">
+            Restore from a file <span class="chevron">v</span>
+          </button>
+          <div class="panel-body hidden" id="uploadBody">
+            <p class="muted upload-intro">
+              Use a SQL dump when the live DB is gone or you are migrating from another host.
+            </p>
 
-        <article class="step locked" id="step2" data-step="2">
-          <div class="step-header">
-            <span class="step-num">2</span>
-            <div>
-              <h2>Recreate Database</h2>
-              <p>
-                Opens the Render dashboard and copies the DB name to your clipboard. Delete the old
-                Free Postgres, then create a new one with the same name.
+            <div class="drop-zone" id="dropZone" tabindex="0">
+              <p>Drop a <strong>.sql</strong> file here, or</p>
+              <button type="button" class="btn btn-ghost" id="btnPickSql">Choose file...</button>
+              <p class="muted" id="uploadFileLabel">No file selected</p>
+            </div>
+
+            <div class="sanitize-report hidden" id="sanitizeReport">
+              <p id="sanitizeSummary"></p>
+              <details id="sanitizeDetails" class="hidden">
+                <summary>Show removed statements</summary>
+                <ul id="sanitizeRemovedList" class="removed-list"></ul>
+              </details>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="btn btn-ghost" id="btnDryRun" disabled>Dry Run</button>
+              <button type="button" class="btn btn-primary" id="btnRestoreFile" disabled>
+                Restore from this file
+              </button>
+              <span class="step-status" id="uploadStatus"></span>
+            </div>
+
+            <div class="run-results hidden" id="runResults">
+              <p id="runResultsSummary"></p>
+              <div id="runFailedList" class="failed-list"></div>
+              <p class="success-link hidden" id="uploadSyncSuccess">
+                Done.
+                <a id="uploadServiceLink" href="#" target="_blank" rel="noreferrer">
+                  Open backend on Render
+                </a>
               </p>
             </div>
           </div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-primary" id="btnRecreate" disabled>
-              Recreate Database
-            </button>
-            <button type="button" class="btn btn-ghost hidden" id="btnContinueAnyway">
-              I've created it, continue anyway
-            </button>
-            <span class="step-status" id="step2Status"></span>
-          </div>
-          <div class="waiting hidden" id="waitingBanner">
-            <span class="spinner"></span>
-            Waiting for new database…
-          </div>
-        </article>
+        </section>
 
-        <article class="step locked" id="step3" data-step="3">
-          <div class="step-header">
-            <span class="step-num">3</span>
-            <div>
-              <h2>Restore &amp; Relink</h2>
-              <p>Restore the backup into the new DB and update your web service env var.</p>
-            </div>
+        <section class="panel">
+          <button type="button" class="panel-toggle" id="historyToggle" aria-expanded="false">
+            History <span class="chevron">v</span>
+          </button>
+          <div class="panel-body hidden" id="historyBody">
+            <ul id="historyList" class="history-list"></ul>
+            <p class="muted empty-hint" id="historyEmpty">No runs yet.</p>
           </div>
-          <div class="step-actions">
-            <button type="button" class="btn btn-primary" id="btnSync" disabled>
-              Restore &amp; Relink
-            </button>
-            <span class="step-status" id="step3Status"></span>
+        </section>
+
+        <section class="panel log-panel">
+          <button type="button" class="panel-toggle" id="logToggle" aria-expanded="true">
+            Log <span class="chevron">v</span>
+          </button>
+          <div class="panel-body" id="logBody">
+            <pre id="logOutput" class="log-output" aria-live="polite"></pre>
+            <button type="button" class="btn btn-ghost btn-sm" id="clearLog">Clear</button>
           </div>
-          <p class="success-link hidden" id="syncSuccess">
-            Done.
-            <a id="serviceLink" href="#" target="_blank" rel="noreferrer">Open backend on Render</a>
-          </p>
-        </article>
-      </section>
-
-      <section class="panel upload-panel">
-        <button type="button" class="panel-toggle" id="uploadToggle" aria-expanded="false">
-          Restore from a file instead <span class="chevron">▾</span>
-        </button>
-        <div class="panel-body hidden" id="uploadBody">
-          <p class="muted upload-intro">
-            Use when the live DB is already gone or you're migrating from another host (e.g. Neon).
-            Pick a <code>.sql</code> dump, sanitize it, dry-run, then restore.
-          </p>
-
-          <div class="drop-zone" id="dropZone" tabindex="0">
-            <p>Drop a <strong>.sql</strong> file here, or</p>
-            <button type="button" class="btn btn-ghost" id="btnPickSql">Choose file…</button>
-            <p class="muted" id="uploadFileLabel">No file selected</p>
-          </div>
-
-          <div class="sanitize-report hidden" id="sanitizeReport">
-            <p id="sanitizeSummary"></p>
-            <details id="sanitizeDetails" class="hidden">
-              <summary>Show removed statements</summary>
-              <ul id="sanitizeRemovedList" class="removed-list"></ul>
-            </details>
-          </div>
-
-          <div class="step-actions">
-            <button type="button" class="btn btn-ghost" id="btnDryRun" disabled>Dry Run</button>
-            <button type="button" class="btn btn-primary" id="btnRestoreFile" disabled>
-              Restore from this file
-            </button>
-            <span class="step-status" id="uploadStatus"></span>
-          </div>
-
-          <div class="run-results hidden" id="runResults">
-            <p id="runResultsSummary"></p>
-            <div id="runFailedList" class="failed-list"></div>
-            <p class="success-link hidden" id="uploadSyncSuccess">
-              Done.
-              <a id="uploadServiceLink" href="#" target="_blank" rel="noreferrer"
-                >Open backend on Render</a
-              >
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <button type="button" class="panel-toggle" id="historyToggle" aria-expanded="false">
-          History <span class="chevron">▾</span>
-        </button>
-        <div class="panel-body hidden" id="historyBody">
-          <ul id="historyList" class="history-list"></ul>
-          <p class="muted empty-hint" id="historyEmpty">No runs yet.</p>
-        </div>
-      </section>
-
-      <section class="panel log-panel">
-        <button type="button" class="panel-toggle" id="logToggle" aria-expanded="true">
-          Log <span class="chevron">▾</span>
-        </button>
-        <div class="panel-body" id="logBody">
-          <pre id="logOutput" class="log-output" aria-live="polite"></pre>
-          <button type="button" class="btn btn-ghost btn-sm" id="clearLog">Clear</button>
-        </div>
+        </section>
       </section>
     </main>
 

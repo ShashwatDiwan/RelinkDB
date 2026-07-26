@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld("api", {
   restoreFromFile: (payload) => ipcRenderer.invoke("action:restoreFromFile", payload),
   getPathForFile: (file) => webUtils.getPathForFile(file),
   checkTools: () => ipcRenderer.invoke("tools:check"),
+  getExpiryStatus: () => ipcRenderer.invoke("status:expiry"),
   getHistory: () => ipcRenderer.invoke("history:get"),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   onLogLine: (callback) => {

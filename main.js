@@ -29,6 +29,7 @@ const {
   isPostgresAvailable,
 } = require("./lib/render-api");
 const { startScheduler, stopScheduler } = require("./lib/scheduler");
+const { getExpiryStatus } = require("./lib/expiry");
 const fs = require("fs");
 
 let mainWindow = null;
@@ -63,6 +64,7 @@ function createWindow() {
     minWidth: 720,
     minHeight: 560,
     title: "RelinkDB",
+    icon: path.join(__dirname, "assets", "logo.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -74,6 +76,14 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, "renderer", "index.html"));
   mainWindow.on("closed", () => {
     mainWindow = null;
+  });
+}
+
+function applyLaunchAtLogin(enabled) {
+  app.setLoginItemSettings({
+    openAtLogin: Boolean(enabled),
+    openAsHidden: false,
+    path: process.execPath,
   });
 }
 
@@ -90,6 +100,7 @@ function registerIpc() {
 
   ipcMain.handle("config:save", (_event, partial) => {
     const saved = saveConfig(partial || {});
+    applyLaunchAtLogin(saved.launchAtLogin);
     return saved;
   });
 
@@ -128,6 +139,27 @@ function registerIpc() {
   }));
 
   ipcMain.handle("history:get", () => getHistory().slice(0, 5));
+
+  ipcMain.handle("status:expiry", async () => {
+    const config = getConfig();
+    if (!config.apiKey || !config.dbName) {
+      return { ok: false, reason: "missing_config" };
+    }
+
+    const db = await findPostgresByName(config.apiKey, config.dbName);
+    if (!db) {
+      return { ok: false, reason: "not_found" };
+    }
+
+    const expiry = getExpiryStatus(db);
+    return {
+      ok: true,
+      dbId: db.id,
+      dbName: db.name,
+      status: db.status || db.state || db.postgresStatus || null,
+      ...expiry,
+    };
+  });
 
   ipcMain.handle("action:backup", async () => {
     const config = getConfig();
@@ -348,6 +380,7 @@ function registerIpc() {
 
 app.whenReady().then(() => {
   registerIpc();
+  applyLaunchAtLogin(getConfig().launchAtLogin);
   createWindow();
   startScheduler({
     onLog: (payload) => {

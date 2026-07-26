@@ -7,19 +7,37 @@
       content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Settings — RelinkDB</title>
+    <title>Settings - RelinkDB</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="topbar">
-      <div>
-        <h1>Settings</h1>
-        <p class="subtitle">Connection config for your Render account</p>
+      <div class="brand-lockup">
+        <img class="brand-mark" src="../assets/logo.png" alt="" />
+        <div class="brand-copy">
+          <p class="brand-kicker">RelinkDB</p>
+          <h1>Settings</h1>
+          <p class="subtitle">Connection config for your Render account</p>
+        </div>
       </div>
-      <a class="btn btn-ghost" href="index.html">← Dashboard</a>
+      <nav class="topbar-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="help.html">Help</a>
+        <a class="btn btn-ghost" href="index.html">Dashboard</a>
+      </nav>
     </header>
 
     <main class="layout narrow">
+      <section class="hero-card">
+        <div>
+          <p class="hero-kicker">Personalized setup</p>
+          <h2>Every operator can keep their own DB, email, and startup preference.</h2>
+          <p>
+            Save once, then use the same settings across restarts. The notification email is kept
+            locally and passed into the cloud notification payload for your chosen delivery path.
+          </p>
+        </div>
+      </section>
+
       <form class="settings-form" id="settingsForm">
         <label>
           <span>Render API Key</span>
@@ -48,28 +66,47 @@
         </label>
 
         <label>
+          <span>Notification Email</span>
+          <input
+            type="email"
+            id="notificationEmail"
+            name="notificationEmail"
+            placeholder="you@example.com"
+          />
+          <small class="field-help">
+            Used by cloud notifications and webhook payloads so each operator can route alerts to
+            their own inbox.
+          </small>
+        </label>
+
+        <label>
           <span>Backup File Path</span>
           <div class="file-row">
             <input type="text" id="backupFile" name="backupFile" required />
-            <button type="button" class="btn btn-ghost" id="pickFile">Browse…</button>
+            <button type="button" class="btn btn-ghost" id="pickFile">Browse...</button>
           </div>
         </label>
 
         <label>
-          <span>Auto-backup interval (days)</span>
+          <span>Cloud check interval (days)</span>
           <input
             type="number"
             id="autoBackupIntervalDays"
             name="autoBackupIntervalDays"
             min="1"
             max="30"
-            value="3"
+            value="1"
           />
+        </label>
+
+        <label class="check-row">
+          <input type="checkbox" id="launchAtLogin" name="launchAtLogin" />
+          <span>Launch RelinkDB when I sign in</span>
         </label>
 
         <div class="notice" id="storageNotice">
           Your API key is stored locally in plaintext at
-          <code id="storePath">…</code>. Don't share this file or commit it to version control.
+          <code id="storePath">...</code>. Don't share this file or commit it to version control.
         </div>
 
         <div class="form-actions">

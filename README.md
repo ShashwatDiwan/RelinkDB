@@ -137,6 +137,12 @@ you configure a webhook.
 
 ## Portable Windows Launch
 
+For a one-click launcher from this project folder, double-click:
+
+```bash
+Start RelinkDB.cmd
+```
+
 If you want an executable launch path instead of `npm start`, stage a
 portable Windows build locally:
 
@@ -145,7 +151,13 @@ npm run package:portable
 ```
 
 That copies the app into `dist/portable/` alongside the bundled Electron
-runtime. Launch the staged `.exe` directly with:
+runtime. Then add a Desktop shortcut:
+
+```bash
+npm run desktop:shortcut
+```
+
+Launch the staged `.exe` directly with:
 
 ```bash
 npm run launch:portable

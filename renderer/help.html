@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Help - RelinkDB</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-lockup">
+        <img class="brand-mark" src="../assets/logo.png" alt="" />
+        <div class="brand-copy">
+          <p class="brand-kicker">RelinkDB</p>
+          <h1>Help and setup guide</h1>
+          <p class="subtitle">Start the app, configure Render, and run the relink flow.</p>
+        </div>
+      </div>
+      <nav class="topbar-actions" aria-label="Primary">
+        <a class="btn btn-ghost" href="settings.html">Settings</a>
+        <a class="btn btn-ghost" href="index.html">Dashboard</a>
+      </nav>
+    </header>
+
+    <main class="layout help-layout">
+      <section class="guide-grid">
+        <article class="guide-card">
+          <h3>1. Start the app</h3>
+          <ol class="step-list">
+            <li>Double-click <code>Start RelinkDB.cmd</code> in this folder for the simplest launch.</li>
+            <li>For a normal desktop-style app, run <code>npm run package:portable</code>.</li>
+            <li>Then run <code>npm run desktop:shortcut</code> to place RelinkDB on your Desktop.</li>
+            <li>After that, open RelinkDB from the Desktop shortcut like any other Windows app.</li>
+          </ol>
+        </article>
+
+        <article class="guide-card">
+          <h3>2. Settings guide</h3>
+          <ul class="bullet-list">
+            <li><strong>Render API Key:</strong> create this in Render Account Settings.</li>
+            <li><strong>Database Name:</strong> use the exact DB name you recreate every cycle.</li>
+            <li><strong>Web Service ID:</strong> the backend service ID from the Render URL.</li>
+            <li><strong>Env Var Key:</strong> usually <code>DATABASE_URL</code>.</li>
+            <li><strong>Notification Email:</strong> where renewal alerts should be routed.</li>
+            <li><strong>Backup File Path:</strong> where the SQL export is written and restored from.</li>
+          </ul>
+        </article>
+
+        <article class="guide-card">
+          <h3>3. Normal monthly flow</h3>
+          <ol class="step-list">
+            <li>Open the dashboard and confirm the expiry countdown.</li>
+            <li>Click <strong>Pull Latest Data</strong> while the current DB is still alive.</li>
+            <li>Click <strong>Recreate Database</strong> only when you are ready to open Render.</li>
+            <li>Create the new free Postgres DB in Render with the same name.</li>
+            <li>Return to RelinkDB and click <strong>Restore &amp; Relink</strong>.</li>
+          </ol>
+        </article>
+
+        <article class="guide-card">
+          <h3>4. Launch on login</h3>
+          <p>
+            Enable Launch RelinkDB when I sign in from Settings. The app opens visibly on Windows
+            login so the countdown and next action are easy to find.
+          </p>
+        </article>
+
+        <article class="guide-card">
+          <h3>5. Cloud notifications</h3>
+          <p>
+            The cloud worker can check expiry daily and export once when the warning window opens.
+            The notification payload includes your configured email so each person can route alerts
+            to their own inbox or webhook workflow.
+          </p>
+          <p class="callout">
+            Worker command: <code>npm run cloud:expiry</code>
+          </p>
+        </article>
+
+        <article class="guide-card">
+          <h3>6. Troubleshooting</h3>
+          <ul class="bullet-list">
+            <li>If email does not appear after saving, reopen Settings and check the field value.</li>
+            <li>If backup or restore mentions <code>psql</code> or <code>pg_dump</code>, install PostgreSQL client tools.</li>
+            <li>If Test Connection fails, verify the API key, DB name, and Render service ID.</li>
+            <li>If the Desktop shortcut fails, rebuild with <code>npm run package:portable</code>.</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
