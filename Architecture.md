@@ -1,5 +1,4 @@
 # Project Architecture & File Structure
-
 RelinkDB coordinates between a local Electron Desktop Application and automation scripts to handle the Postgres rotation workflow smoothly.
 
 ```text
