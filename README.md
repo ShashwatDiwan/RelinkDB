@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/github/stars/ShashwatDiwan/RelinkDB?style=flat-square&color=orange" alt="Stars" />
   <img src="https://img.shields.io/github/forks/ShashwatDiwan/RelinkDB?style=flat-square&color=blue" alt="Forks" />
   <img src="https://img.shields.io/github/last-commit/ShashwatDiwan/RelinkDB?style=flat-square" alt="Last Commit" />
-  <img src="https://img.shields.io/badge/license-unspecified-lightgrey?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/MIT-License-lightgrey?style=flat-square" alt="License" />
 </p>
 
 **Render's free Postgres databases expire every 30 days. RelinkDB turns that monthly scramble into a two-minute, guided routine.**
