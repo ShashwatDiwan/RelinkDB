@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/github/stars/ShashwatDiwan/RelinkDB?style=flat-square&color=orange" alt="Stars" />
   <img src="https://img.shields.io/github/forks/ShashwatDiwan/RelinkDB?style=flat-square&color=blue" alt="Forks" />
   <img src="https://img.shields.io/github/last-commit/ShashwatDiwan/RelinkDB?style=flat-square" alt="Last Commit" />
-  <img src="https://img.shields.io/badge/license-unspecified-lightgrey?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/MIT-License-lightgrey?style=flat-square" alt="License" />
 </p>
 
 **Render's free Postgres databases expire every 30 days. RelinkDB turns that monthly scramble into a two-minute, guided routine.**
@@ -200,13 +200,7 @@ The desktop app stays focused on the operator flow; a small standalone worker ha
 npm run cloud:expiry
 ```
 
-| Environment Variable | Purpose |
-|---|---|
-| `RENDER_API_KEY` | Authenticates against the Render API |
-| `RENDER_DB_NAME` | Identifies the database to track |
-| `BACKUP_FILE` | Destination for the auto-exported backup |
-| `RELINKDB_NOTIFY_WEBHOOK` | Optional — receives a JSON renewal-ready payload |
-| `RELINKDB_CHECK_MS` | Optional — check interval, defaults to 24 hours |
+The worker reads `RENDER_API_KEY`, `RENDER_DB_NAME` and `BACKUP_FILE`, plus the optional `RELINKDB_*` variables — all listed in the [Environment Variables Reference](#environment-variables-reference).
 
 **What it does:**
 - Checks the active database's age on a schedule
@@ -251,15 +245,34 @@ npm install
 cp .env.example .env
 ```
 
-Fill in `.env` with the following:
+Then fill in `.env` using the reference below.
 
-| Variable | Description |
-|---|---|
-| `RENDER_API_KEY` | Account Settings → API Keys → Create API Key |
-| `RENDER_DB_NAME` | A fixed name reused every time the database is recreated |
-| `RENDER_WEB_SERVICE_ID` | The `srv-...` ID from the backend service's dashboard URL |
-| `RENDER_ENV_VAR_KEY` | The env var the app reads the database URL from (defaults to `DATABASE_URL`) |
-| `BACKUP_FILE` | Path to `data.sql`, overwritten with fresh data every cycle |
+### Environment Variables Reference
+
+Every variable RelinkDB reads, what it controls, and what happens when it is left unset. A value in the **Default** column is applied automatically, so the variable can be omitted from `.env` entirely.
+
+**Desktop app and local scripts** — used by `npm start`, `npm run backup` and `npm run sync`
+
+| Variable | Required | Default | Description | Example |
+|---|---|---|---|---|
+| `RENDER_API_KEY` | Yes | — | Authenticates every Render API call. Create one under Account Settings → API Keys → Create API Key. | `rnd_xxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
+| `RENDER_DB_NAME` | Yes | — | The exact Postgres instance name. Reuse the same name every time the database is recreated so RelinkDB can always find the current one. | `myapp-db` |
+| `RENDER_WEB_SERVICE_ID` | Yes, for `sync` | — | The backend Web Service to relink, taken from the `srv-...` segment of the service's dashboard URL. Not needed for backups. | `srv-xxxxxxxxxxxxxxxxxxxx` |
+| `RENDER_ENV_VAR_KEY` | No | `DATABASE_URL` | The env var on the backend service that receives the new connection string. Change this only if your app reads the database URL from a different key. | `POSTGRES_URL` |
+| `BACKUP_FILE` | No | `./data.sql` | Dump file written by `backup` and read back by `sync`. Overwritten on every backup, so keep it out of version control if it holds real user data. | `./backups/data.sql` |
+
+**Cloud expiry worker only** — used by `npm run cloud:expiry`
+
+| Variable | Required | Default | Description | Example |
+|---|---|---|---|---|
+| `RELINKDB_NOTIFY_WEBHOOK` | No | none — the payload is logged to the console instead | Receives the `renewal-ready` JSON payload as an HTTP `POST`. A non-2xx response is treated as a failure and raised as an error. | `https://hooks.example.com/relinkdb` |
+| `RELINKDB_NOTIFICATION_EMAIL` | No | `null` | Included in the payload as `notificationEmail` so each operator can route their own alerts. The worker itself never sends email. | `you@example.com` |
+| `RELINKDB_CHECK_MS` | No | `86400000` (24 hours) | Interval between expiry checks in loop mode. Ignored when the worker is invoked with the `once` argument. | `3600000` |
+| `RELINKDB_STATE_FILE` | No | `cloud/expiry-worker-state.json` | Where the worker records the last auto-export and notification. This is what stops it from exporting the same database cycle twice, so point it at a persistent path when running on ephemeral infrastructure. | `/var/lib/relinkdb/state.json` |
+
+> **Notes**
+> - The worker also needs `RENDER_API_KEY` and `RENDER_DB_NAME`, and exits with `Missing RENDER_API_KEY or RENDER_DB_NAME.` if either is absent.
+> - The worker resolves the `BACKUP_FILE` default against the current working directory, while `backup` and `sync` resolve it relative to the project root. Set an absolute path if you run the worker from another directory.
 
 For full-fidelity dumps (foreign keys, indexes, sequences, custom types), install the Postgres client tools once:
 
